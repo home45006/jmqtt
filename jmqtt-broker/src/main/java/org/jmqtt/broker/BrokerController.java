@@ -1,14 +1,26 @@
 package org.jmqtt.broker;
 
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import lombok.Data;
 import org.jmqtt.broker.acl.ConnectPermission;
 import org.jmqtt.broker.acl.PubSubPermission;
 import org.jmqtt.broker.acl.impl.DefaultConnectPermission;
 import org.jmqtt.broker.acl.impl.DefaultPubSubPermission;
 import org.jmqtt.broker.client.ClientLifeCycleHookService;
 import org.jmqtt.broker.dispatcher.DefaultDispatcherMessage;
+import org.jmqtt.broker.dispatcher.DefaultMessageTransfer;
+import org.jmqtt.broker.dispatcher.InnerMessageTransfer;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
-import org.jmqtt.broker.processor.*;
+import org.jmqtt.broker.processor.ConnectProcessor;
+import org.jmqtt.broker.processor.DisconnectProcessor;
+import org.jmqtt.broker.processor.PingProcessor;
+import org.jmqtt.broker.processor.PubAckProcessor;
+import org.jmqtt.broker.processor.PubCompProcessor;
+import org.jmqtt.broker.processor.PubRecProcessor;
+import org.jmqtt.broker.processor.PubRelProcessor;
+import org.jmqtt.broker.processor.PublishProcessor;
+import org.jmqtt.broker.processor.SubscribeProcessor;
+import org.jmqtt.broker.processor.UnSubscribeProcessor;
 import org.jmqtt.broker.recover.ReSendMessageService;
 import org.jmqtt.broker.subscribe.DefaultSubscriptionTreeMatcher;
 import org.jmqtt.broker.subscribe.SubscriptionMatcher;
@@ -23,8 +35,6 @@ import org.jmqtt.common.log.LoggerName;
 import org.jmqtt.group.ClusterRemotingClient;
 import org.jmqtt.group.ClusterRemotingServer;
 import org.jmqtt.group.MessageTransfer;
-import org.jmqtt.broker.dispatcher.DefaultMessageTransfer;
-import org.jmqtt.broker.dispatcher.InnerMessageTransfer;
 import org.jmqtt.group.processor.ClusterOuterAPI;
 import org.jmqtt.group.processor.ClusterRequestProcessor;
 import org.jmqtt.group.processor.FetchNodeProcessor;
@@ -34,25 +44,40 @@ import org.jmqtt.group.remoting.NettyClusterRemotingServer;
 import org.jmqtt.remoting.netty.ChannelEventListener;
 import org.jmqtt.remoting.netty.NettyRemotingServer;
 import org.jmqtt.remoting.netty.RequestProcessor;
-import org.jmqtt.store.*;
+import org.jmqtt.store.AbstractMqttStore;
+import org.jmqtt.store.FlowMessageStore;
+import org.jmqtt.store.OfflineMessageStore;
+import org.jmqtt.store.RetainMessageStore;
+import org.jmqtt.store.SessionStore;
+import org.jmqtt.store.SubscriptionStore;
+import org.jmqtt.store.WillMessageStore;
 import org.jmqtt.store.memory.DefaultMqttStore;
 import org.jmqtt.store.rocksdb.RDBMqttStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Data
+@Component
 public class BrokerController {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER);
 
+    @Resource
     private BrokerConfig brokerConfig;
+    @Resource
     private NettyConfig nettyConfig;
+    @Resource
     private StoreConfig storeConfig;
+    @Resource
     private ClusterConfig clusterConfig;
+
     private ExecutorService connectExecutor;
     private ExecutorService pubExecutor;
     private ExecutorService subExecutor;
@@ -84,13 +109,20 @@ public class BrokerController {
     private InnerMessageTransfer innerMessageTransfer;
     private ExecutorService clusterService;
 
+    public BrokerController() {
 
-    public BrokerController(BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig, ClusterConfig clusterConfig) {
+    }
+
+
+    public BrokerController(BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig,
+                            ClusterConfig clusterConfig) {
         this.brokerConfig = brokerConfig;
         this.nettyConfig = nettyConfig;
         this.storeConfig = storeConfig;
         this.clusterConfig = clusterConfig;
+    }
 
+    public void init() {
         this.connectQueue = new LinkedBlockingQueue(100000);
         this.pubQueue = new LinkedBlockingQueue(100000);
         this.subQueue = new LinkedBlockingQueue(100000);
@@ -125,7 +157,8 @@ public class BrokerController {
         }
 
         this.subscriptionMatcher = new DefaultSubscriptionTreeMatcher();
-        this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher, flowMessageStore, offlineMessageStore);
+        this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher,
+                flowMessageStore, offlineMessageStore);
 
         this.channelEventListener = new ClientLifeCycleHookService(willMessageStore, messageDispatcher);
         this.remotingServer = new NettyRemotingServer(nettyConfig, channelEventListener);
@@ -166,8 +199,8 @@ public class BrokerController {
         this.clusterServer = new NettyClusterRemotingServer(clusterConfig);
         {
             // message transfer is pluginAble
-            MessageTransfer messageTransfer = new DefaultMessageTransfer(this.clusterClient,this.clusterServer);
-            this.innerMessageTransfer = new InnerMessageTransfer(this,messageTransfer);
+            MessageTransfer messageTransfer = new DefaultMessageTransfer(this.clusterClient, this.clusterServer);
+            this.innerMessageTransfer = new InnerMessageTransfer(this, messageTransfer);
         }
         this.clusterOuterAPI = new ClusterOuterAPI(clusterConfig, clusterClient);
         this.clusterService = new ThreadPoolExecutor(coreThreadNum * 2,
@@ -177,12 +210,11 @@ public class BrokerController {
                 new LinkedBlockingQueue<>(10000),
                 new ThreadFactoryImpl("ClusterThread"),
                 new RejectHandler("sub", 100000));
-
     }
 
 
     public void start() {
-
+        init();
         MixAll.printProperties(log, brokerConfig);
         MixAll.printProperties(log, nettyConfig);
         MixAll.printProperties(log, storeConfig);
@@ -214,7 +246,8 @@ public class BrokerController {
 
         {//init and register cluster processor
             ClusterRequestProcessor fetchNodeProcessor = new FetchNodeProcessor();
-            this.clusterServer.registerClusterProcessor(ClusterRequestCode.FETCH_NODES,fetchNodeProcessor,clusterService);
+            this.clusterServer.registerClusterProcessor(ClusterRequestCode.FETCH_NODES, fetchNodeProcessor,
+                    clusterService);
         }
         this.innerMessageTransfer.init();
         this.clusterClient.start();
@@ -238,129 +271,5 @@ public class BrokerController {
         this.messageDispatcher.shutdown();
         this.reSendMessageService.shutdown();
         this.abstractMqttStore.shutdown();
-    }
-
-    public BrokerConfig getBrokerConfig() {
-        return brokerConfig;
-    }
-
-    public NettyConfig getNettyConfig() {
-        return nettyConfig;
-    }
-
-    public ExecutorService getConnectExecutor() {
-        return connectExecutor;
-    }
-
-    public ExecutorService getPubExecutor() {
-        return pubExecutor;
-    }
-
-    public ExecutorService getSubExecutor() {
-        return subExecutor;
-    }
-
-    public ExecutorService getPingExecutor() {
-        return pingExecutor;
-    }
-
-    public LinkedBlockingQueue getConnectQueue() {
-        return connectQueue;
-    }
-
-    public LinkedBlockingQueue getPubQueue() {
-        return pubQueue;
-    }
-
-    public LinkedBlockingQueue getSubQueue() {
-        return subQueue;
-    }
-
-    public LinkedBlockingQueue getPingQueue() {
-        return pingQueue;
-    }
-
-    public NettyRemotingServer getRemotingServer() {
-        return remotingServer;
-    }
-
-    public MessageDispatcher getMessageDispatcher() {
-        return messageDispatcher;
-    }
-
-    public FlowMessageStore getFlowMessageStore() {
-        return flowMessageStore;
-    }
-
-    public SubscriptionMatcher getSubscriptionMatcher() {
-        return subscriptionMatcher;
-    }
-
-    public WillMessageStore getWillMessageStore() {
-        return willMessageStore;
-    }
-
-    public RetainMessageStore getRetainMessageStore() {
-        return retainMessageStore;
-    }
-
-    public OfflineMessageStore getOfflineMessageStore() {
-        return offlineMessageStore;
-    }
-
-    public SubscriptionStore getSubscriptionStore() {
-        return subscriptionStore;
-    }
-
-    public SessionStore getSessionStore() {
-        return sessionStore;
-    }
-
-    public ConnectPermission getConnectPermission() {
-        return connectPermission;
-    }
-
-    public PubSubPermission getPubSubPermission() {
-        return pubSubPermission;
-    }
-
-    public ReSendMessageService getReSendMessageService() {
-        return reSendMessageService;
-    }
-
-    public StoreConfig getStoreConfig() {
-        return storeConfig;
-    }
-
-    public ClusterConfig getClusterConfig() {
-        return clusterConfig;
-    }
-
-    public ChannelEventListener getChannelEventListener() {
-        return channelEventListener;
-    }
-
-    public AbstractMqttStore getAbstractMqttStore() {
-        return abstractMqttStore;
-    }
-
-    public ClusterRemotingClient getClusterClient() {
-        return clusterClient;
-    }
-
-    public ClusterRemotingServer getClusterServer() {
-        return clusterServer;
-    }
-
-    public ClusterOuterAPI getClusterOuterAPI() {
-        return clusterOuterAPI;
-    }
-
-    public InnerMessageTransfer getInnerMessageTransfer() {
-        return innerMessageTransfer;
-    }
-
-    public ExecutorService getClusterService() {
-        return clusterService;
     }
 }

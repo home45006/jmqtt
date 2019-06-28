@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.jmqtt.broker.modules.push.dao.PushAppDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="org.jmqtt.broker.modules.push.entity.PushAppEntity" id="pushAppMap">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="appName" column="app_name"/>
+        <result property="appDescription" column="app_description"/>
+        <result property="platformTypes" column="platform_types"/>
+        <result property="appPkg" column="app_pkg"/>
+        <result property="appKey" column="app_key"/>
+        <result property="masterSecret" column="master_secret"/>
+        <result property="temp1" column="temp1"/>
+        <result property="temp2" column="temp2"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+    </resultMap>
+
+
+</mapper>
