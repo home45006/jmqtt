@@ -36,6 +36,8 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
                 messageDispatcher.appendMessage(willMessage);
             }
         }
+
+        // TODO 消息断开后是否根据cleanSession释放资源
     }
 
     @Override

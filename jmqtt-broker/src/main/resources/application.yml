@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: autopai-mq-push-jmqtt
   # 环境 dev|test|prod
   profiles:
     active: dev
@@ -55,4 +57,3 @@ jmqtt:
   nodeName: node_1
   groupServerPort: 8880
   groupNodes: "" #init group nodes,ip1:port1;ip2:port2
-
