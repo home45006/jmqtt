@@ -49,7 +49,7 @@ spring:
 #      password: 123456
 
 dubbo.scan.base-packages: org.jmqtt.broker
-nacos.server-address: 10.1.72.57
+nacos.server-address: test.admin.auto-pai.com
 nacos.port: 8848
 
 dubbo.protocol.name: dubbo
