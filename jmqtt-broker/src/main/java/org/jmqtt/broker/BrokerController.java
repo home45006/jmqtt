@@ -88,7 +88,10 @@ public class BrokerController {
     private LinkedBlockingQueue pingQueue;
     private ChannelEventListener channelEventListener;
     private NettyRemotingServer remotingServer;
+
+    @Resource
     private MessageDispatcher messageDispatcher;
+
     private FlowMessageStore flowMessageStore;
     private SubscriptionMatcher subscriptionMatcher;
     private WillMessageStore willMessageStore;

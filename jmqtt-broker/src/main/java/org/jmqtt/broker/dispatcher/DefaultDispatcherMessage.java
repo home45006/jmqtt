@@ -2,6 +2,8 @@ package org.jmqtt.broker.dispatcher;
 
 
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.jmqtt.broker.subscribe.SubscriptionMatcher;
 import org.jmqtt.remoting.session.ClientSession;
 import org.jmqtt.common.bean.Message;
@@ -16,6 +18,7 @@ import org.jmqtt.store.FlowMessageStore;
 import org.jmqtt.store.OfflineMessageStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +30,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-
+@Data
+@NoArgsConstructor
+@Component
 public class DefaultDispatcherMessage implements MessageDispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.MESSAGE_TRACE);
