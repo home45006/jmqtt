@@ -93,15 +93,25 @@ public class BrokerController {
     private MessageDispatcher messageDispatcher;
 
     private FlowMessageStore flowMessageStore;
+
+    @Resource(name = "DefaultSubscriptionTreeMatcher")
     private SubscriptionMatcher subscriptionMatcher;
+
     private WillMessageStore willMessageStore;
     private RetainMessageStore retainMessageStore;
     private OfflineMessageStore offlineMessageStore;
     private SubscriptionStore subscriptionStore;
     private SessionStore sessionStore;
     private AbstractMqttStore abstractMqttStore;
+
+    // ----------permission pluggable start----------
+    @Resource(name = "DefaultConnectPermission")
     private ConnectPermission connectPermission;
+
+    @Resource(name = "DefaultPubSubPermission")
     private PubSubPermission pubSubPermission;
+    // ----------permission pluggable end----------
+
     private ReSendMessageService reSendMessageService;
     /**
      * cluster message transfer innerMessageTransfer is pluginable
@@ -154,12 +164,6 @@ public class BrokerController {
             this.sessionStore = this.abstractMqttStore.getSessionStore();
         }
 
-        {// permission pluggable
-            this.connectPermission = new DefaultConnectPermission();
-            this.pubSubPermission = new DefaultPubSubPermission();
-        }
-
-        this.subscriptionMatcher = new DefaultSubscriptionTreeMatcher();
         this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher,
                 flowMessageStore, offlineMessageStore);
 
