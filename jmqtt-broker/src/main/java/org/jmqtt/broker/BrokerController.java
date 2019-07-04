@@ -71,10 +71,13 @@ public class BrokerController {
 
     @Resource
     private BrokerConfig brokerConfig;
+
     @Resource
     private NettyConfig nettyConfig;
+
     @Resource
     private StoreConfig storeConfig;
+
     @Resource
     private ClusterConfig clusterConfig;
 
