@@ -2,12 +2,14 @@ package org.jmqtt.broker.processor;
 
 import org.jmqtt.broker.dispatcher.InnerMessageTransfer;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
+import org.jmqtt.broker.plugin.PluginServer;
 import org.jmqtt.common.bean.Message;
 import org.jmqtt.common.bean.MessageHeader;
 import org.jmqtt.common.helper.SerializeHelper;
 import org.jmqtt.group.protocol.ClusterRemotingCommand;
 import org.jmqtt.group.protocol.ClusterRequestCode;
 import org.jmqtt.store.RetainMessageStore;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbstractMessageProcessor {
 
@@ -15,14 +17,18 @@ public abstract class AbstractMessageProcessor {
     private InnerMessageTransfer messageTransfer;
     private RetainMessageStore retainMessageStore;
 
-    public AbstractMessageProcessor(MessageDispatcher messageDispatcher,RetainMessageStore retainMessageStore,InnerMessageTransfer messageTransfer){
+    private PluginServer pluginServer;
+
+    public AbstractMessageProcessor(MessageDispatcher messageDispatcher, RetainMessageStore retainMessageStore, InnerMessageTransfer messageTransfer, PluginServer pluginServer){
         this.messageDispatcher = messageDispatcher;
         this.retainMessageStore = retainMessageStore;
         this.messageTransfer = messageTransfer;
+        this.pluginServer = pluginServer;
     }
 
     protected void  processMessage(Message message){
         this.messageDispatcher.appendMessage(message);
+        this.pluginServer.appendMessage( message );
         boolean retain = (boolean) message.getHeader(MessageHeader.RETAIN);
         if(retain){
             int qos = (int) message.getHeader(MessageHeader.QOS);

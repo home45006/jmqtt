@@ -25,7 +25,7 @@ public class PubRelProcessor extends AbstractMessageProcessor implements Request
     private FlowMessageStore flowMessageStore;
 
     public PubRelProcessor(BrokerController controller) {
-        super(controller.getMessageDispatcher(),controller.getRetainMessageStore(),controller.getInnerMessageTransfer());
+        super(controller.getMessageDispatcher(),controller.getRetainMessageStore(),controller.getInnerMessageTransfer(),controller.getPluginServer());
         this.flowMessageStore = controller.getFlowMessageStore();
     }
 

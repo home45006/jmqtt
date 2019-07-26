@@ -4,13 +4,12 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import lombok.Data;
 import org.jmqtt.broker.acl.ConnectPermission;
 import org.jmqtt.broker.acl.PubSubPermission;
-import org.jmqtt.broker.acl.impl.DefaultConnectPermission;
-import org.jmqtt.broker.acl.impl.DefaultPubSubPermission;
 import org.jmqtt.broker.client.ClientLifeCycleHookService;
 import org.jmqtt.broker.dispatcher.DefaultDispatcherMessage;
 import org.jmqtt.broker.dispatcher.DefaultMessageTransfer;
 import org.jmqtt.broker.dispatcher.InnerMessageTransfer;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
+import org.jmqtt.broker.plugin.PluginServer;
 import org.jmqtt.broker.processor.ConnectProcessor;
 import org.jmqtt.broker.processor.DisconnectProcessor;
 import org.jmqtt.broker.processor.PingProcessor;
@@ -22,7 +21,6 @@ import org.jmqtt.broker.processor.PublishProcessor;
 import org.jmqtt.broker.processor.SubscribeProcessor;
 import org.jmqtt.broker.processor.UnSubscribeProcessor;
 import org.jmqtt.broker.recover.ReSendMessageService;
-import org.jmqtt.broker.subscribe.DefaultSubscriptionTreeMatcher;
 import org.jmqtt.broker.subscribe.SubscriptionMatcher;
 import org.jmqtt.common.config.BrokerConfig;
 import org.jmqtt.common.config.ClusterConfig;
@@ -124,6 +122,9 @@ public class BrokerController {
     private ClusterOuterAPI clusterOuterAPI;
     private InnerMessageTransfer innerMessageTransfer;
     private ExecutorService clusterService;
+
+    @Resource
+    private PluginServer pluginServer;
 
     public BrokerController() {
 
