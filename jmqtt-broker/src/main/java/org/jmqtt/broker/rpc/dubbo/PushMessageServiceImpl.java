@@ -3,13 +3,11 @@ package org.jmqtt.broker.rpc.dubbo;
 import com.autopai.mq.push.api.pojo.RpcResult;
 import com.autopai.mq.push.api.pojo.enums.RpcReturnCode;
 import com.autopai.mq.push.api.service.PushMessageService;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.Service;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
 import org.jmqtt.common.bean.Message;
 import org.jmqtt.common.bean.MessageHeader;
-import org.jmqtt.remoting.util.MessageUtil;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -22,7 +20,7 @@ import java.util.Map;
  * @create: 2019-07-03 11:37
  **/
 @Slf4j
-@Service(version = "${demo.service.version}")
+@Service(version = "1.0.0")
 public class PushMessageServiceImpl implements PushMessageService {
 
     @Resource
