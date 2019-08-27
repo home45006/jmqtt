@@ -67,6 +67,8 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
         Token token = new Token(tokens[0]);
         TreeNode matchNode = node.getChildNodeByToken(token);
         if(Objects.isNull(matchNode)){
+
+            // 二重检验锁, 防止创建两个对象
             synchronized (lock){
                 matchNode = node.getChildNodeByToken(token);
                 if(Objects.isNull(matchNode)){
