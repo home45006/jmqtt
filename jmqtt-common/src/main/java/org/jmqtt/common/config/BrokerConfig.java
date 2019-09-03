@@ -14,7 +14,14 @@ public class BrokerConfig {
     @Value("${jmqtt.version}")
     private String version;
 
-    private boolean anonymousEnable = true;
+    @Value("${jmqtt.sysInterval}")
+    private Integer sysInterval;
+
+    @Value("${jmqtt.allowAnonymous}")
+    private Boolean allowAnonymous;
+
+    @Value("${jmqtt.passwordFile}")
+    private String passwordFile;
 
     private int pollThreadNum = Runtime.getRuntime().availableProcessors() * 2;
 }

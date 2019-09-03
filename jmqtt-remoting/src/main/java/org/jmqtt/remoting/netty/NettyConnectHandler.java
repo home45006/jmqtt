@@ -24,13 +24,18 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
     public void channelActive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelActive] -> addr = {}",remoteAddr);
+        Long connectedCount = BrokerStatus.getInstance().getBrokerClientConnected().incrementAndGet();
+        log.info("broker client connected number: {}", connectedCount);
         this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr,NettyEventType.CONNECT,ctx.channel()));
+        ctx.fireChannelActive();
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelInactive] -> addr = {}",remoteAddr);
+        Long connectedCount = BrokerStatus.getInstance().getBrokerClientConnected().decrementAndGet();
+        log.info("broker client connected number: {}", connectedCount);
         this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr,NettyEventType.CLOSE,ctx.channel()));
     }
 

@@ -47,13 +47,16 @@ mybatis-plus:
 
 jmqtt:
   version: @project.version@
-  port: 1883
+  port: 2883
   maxMsgSize: 524288
   storeType: 3 # storage: 1.rocksdb 2.default 3.memory
   rocksDbPath: rocksdb.db
   startWebsocket: true
-  websocketPort: 1884
+  websocketPort: 2884
   currentNodeIp: ""
   nodeName: node_1
   groupServerPort: 8880
   groupNodes: "" #init group nodes,ip1:port1;ip2:port2
+  sysInterval: 10
+  allowAnonymous: false
+  passwordFile: jmqtt-broker/config/password_file.conf

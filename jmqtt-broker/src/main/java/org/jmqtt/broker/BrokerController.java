@@ -10,18 +10,10 @@ import org.jmqtt.broker.dispatcher.DefaultMessageTransfer;
 import org.jmqtt.broker.dispatcher.InnerMessageTransfer;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
 import org.jmqtt.broker.plugin.PluginServer;
-import org.jmqtt.broker.processor.ConnectProcessor;
-import org.jmqtt.broker.processor.DisconnectProcessor;
-import org.jmqtt.broker.processor.PingProcessor;
-import org.jmqtt.broker.processor.PubAckProcessor;
-import org.jmqtt.broker.processor.PubCompProcessor;
-import org.jmqtt.broker.processor.PubRecProcessor;
-import org.jmqtt.broker.processor.PubRelProcessor;
-import org.jmqtt.broker.processor.PublishProcessor;
-import org.jmqtt.broker.processor.SubscribeProcessor;
-import org.jmqtt.broker.processor.UnSubscribeProcessor;
+import org.jmqtt.broker.processor.*;
 import org.jmqtt.broker.recover.ReSendMessageService;
 import org.jmqtt.broker.subscribe.SubscriptionMatcher;
+import org.jmqtt.broker.sys.SysBrokerExcutor;
 import org.jmqtt.common.config.BrokerConfig;
 import org.jmqtt.common.config.ClusterConfig;
 import org.jmqtt.common.config.NettyConfig;
@@ -42,13 +34,7 @@ import org.jmqtt.group.remoting.NettyClusterRemotingServer;
 import org.jmqtt.remoting.netty.ChannelEventListener;
 import org.jmqtt.remoting.netty.NettyRemotingServer;
 import org.jmqtt.remoting.netty.RequestProcessor;
-import org.jmqtt.store.AbstractMqttStore;
-import org.jmqtt.store.FlowMessageStore;
-import org.jmqtt.store.OfflineMessageStore;
-import org.jmqtt.store.RetainMessageStore;
-import org.jmqtt.store.SessionStore;
-import org.jmqtt.store.SubscriptionStore;
-import org.jmqtt.store.WillMessageStore;
+import org.jmqtt.store.*;
 import org.jmqtt.store.memory.DefaultMqttStore;
 import org.jmqtt.store.rocksdb.RDBMqttStore;
 import org.slf4j.Logger;
@@ -78,6 +64,9 @@ public class BrokerController {
 
     @Resource
     private ClusterConfig clusterConfig;
+
+    @Resource
+    private SysBrokerExcutor sysBrokerExcutor;
 
     private ExecutorService connectExecutor;
     private ExecutorService pubExecutor;
@@ -170,6 +159,7 @@ public class BrokerController {
 
         this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher,
                 flowMessageStore, offlineMessageStore);
+        this.sysBrokerExcutor.setMessageDispatcher(messageDispatcher);
 
         this.channelEventListener = new ClientLifeCycleHookService(willMessageStore, messageDispatcher);
         this.remotingServer = new NettyRemotingServer(nettyConfig, channelEventListener);
@@ -266,6 +256,7 @@ public class BrokerController {
         this.clusterOuterAPI.start();
         this.messageDispatcher.start();
         this.reSendMessageService.start();
+        this.sysBrokerExcutor.start();
         this.remotingServer.start();
         log.info("JMqtt Server start success and version = {}", brokerConfig.getVersion());
     }

@@ -23,6 +23,10 @@ import org.jmqtt.common.helper.Pair;
 import org.jmqtt.common.helper.ThreadFactoryImpl;
 import org.jmqtt.common.log.LoggerName;
 import org.jmqtt.remoting.RemotingService;
+import org.jmqtt.remoting.metrics.BytesMetricsCollector;
+import org.jmqtt.remoting.metrics.BytesMetricsHandler;
+import org.jmqtt.remoting.metrics.MessageMetricsCollector;
+import org.jmqtt.remoting.metrics.MessageMetricsHandler;
 import org.jmqtt.remoting.netty.codec.ByteBuf2WebSocketEncoder;
 import org.jmqtt.remoting.netty.codec.WebSocket2ByteBufDecoder;
 import org.slf4j.Logger;
@@ -43,6 +47,9 @@ public class NettyRemotingServer implements RemotingService {
     private Class<? extends ServerChannel> clazz;
     private Map<MqttMessageType, Pair<RequestProcessor, ExecutorService>> processorTable;
     private NettyEventExcutor nettyEventExcutor;
+
+    private BytesMetricsCollector bytesMetricsCollector = new BytesMetricsCollector();
+    private MessageMetricsCollector metricsCollector = new MessageMetricsCollector();
 
     public NettyRemotingServer(NettyConfig nettyConfig, ChannelEventListener listener) {
         this.nettyConfig = nettyConfig;
@@ -133,7 +140,9 @@ public class NettyRemotingServer implements RemotingService {
                                 .addLast("mqttEncoder", MqttEncoder.INSTANCE)
                                 .addLast("mqttDecoder", new MqttDecoder(nettyConfig.getMaxMsgSize()))
                                 .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExcutor))
+                                .addLast("metrics", new MessageMetricsHandler(metricsCollector))
                                 .addLast("nettyMqttHandler", new NettyMqttHandler());
+                        pipeline.addFirst("bytemetrics", new BytesMetricsHandler(bytesMetricsCollector));
                     }
                 });
         if(nettyConfig.isPooledByteBufAllocatorEnable()){
